@@ -4,6 +4,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import axiosLogo from './assets/axios.svg'
 import reactRouterLogo from './assets/react-router.svg'
+import tailwindcssLogo from './assets/tailwindcss.svg'
 import './App.css'
 import meta from '../package.json'
 
@@ -39,6 +40,12 @@ const stack: Tool[] = [
     version: meta.dependencies['react-router'],
     logo: reactRouterLogo,
   },
+  {
+    name: 'tailwindcss',
+    href: 'https://tailwindcss.com/',
+    version: meta.dependencies['tailwindcss'],
+    logo: tailwindcssLogo,
+  },
 ]
 
 function App() {
@@ -51,7 +58,7 @@ function App() {
   return (
     <>
       <h1>{message}</h1>
-      <div>
+      <div className="flex">
         {stack.map((tool) => (
           <a
             href={tool.href}
