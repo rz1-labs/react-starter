@@ -58,7 +58,11 @@ function App() {
             target="_blank"
             onMouseOver={() => mouseHoverHandler(tool)}
           >
-            <img src={tool.logo} className="logo" alt={`${tool.name} logo`} />
+            <img
+              src={tool.logo}
+              className={`logo ${tool.name}`}
+              alt={`${tool.name} logo`}
+            />
           </a>
         ))}
       </div>
