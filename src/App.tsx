@@ -74,7 +74,7 @@ function App() {
             onMouseOver={() => mouseHoverHandler(tool)}
           >
             <div className="avatar indicator">
-              <span className="indicator-item badge badge-secondary">
+              <span className="indicator-item indicator-center badge badge-secondary">
                 {tool.name}
                 {tool.version}
               </span>
