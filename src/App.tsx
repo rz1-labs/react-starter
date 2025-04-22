@@ -57,7 +57,7 @@ function App() {
 
   return (
     <>
-      <h1>{message}</h1>
+      <h1 className="text-3xl font-bold underline">{message}</h1>
       <div className="flex">
         {stack.map((tool) => (
           <a
