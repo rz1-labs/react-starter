@@ -5,8 +5,11 @@ import viteLogo from '/vite.svg'
 import axiosLogo from './assets/axios.svg'
 import reactRouterLogo from './assets/react-router.svg'
 import tailwindcssLogo from './assets/tailwindcss.svg'
+import shadcnuiLogo from './assets/shadcnui.svg'
 import './App.css'
 import meta from '../package.json'
+
+import { Button } from '@/components/ui/button'
 
 interface Tool {
   name: string
@@ -46,13 +49,21 @@ const stack: Tool[] = [
     version: meta.dependencies['tailwindcss'],
     logo: tailwindcssLogo,
   },
+  {
+    name: 'shadcnui',
+    href: 'https://ui.shadcn.com/',
+    version: '',
+    logo: shadcnuiLogo,
+  },
 ]
 
 function App() {
   const [message, setMessage] = useState('Welcome!')
 
   const mouseHoverHandler = (tool: Tool) => {
-    setMessage(`${tool.name} v${tool.version.substring(1)}`)
+    setMessage(
+      `${tool.name}${tool.version && ` v${tool.version.substring(1)}`}`
+    )
   }
 
   return (
@@ -73,6 +84,7 @@ function App() {
           </a>
         ))}
       </div>
+      <Button>shadcn has no version</Button>
     </>
   )
 }
