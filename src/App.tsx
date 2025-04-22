@@ -5,6 +5,7 @@ import viteLogo from '/vite.svg'
 import axiosLogo from './assets/axios.svg'
 import reactRouterLogo from './assets/react-router.svg'
 import tailwindcssLogo from './assets/tailwindcss.svg'
+import daisyuiLogo from './assets/daisyui.svg'
 import './App.css'
 import meta from '../package.json'
 
@@ -46,6 +47,12 @@ const stack: Tool[] = [
     version: meta.dependencies['tailwindcss'],
     logo: tailwindcssLogo,
   },
+  {
+    name: 'daisyui',
+    href: 'https://daisyui.com/',
+    version: meta.dependencies['daisyui'],
+    logo: daisyuiLogo,
+  },
 ]
 
 function App() {
@@ -57,7 +64,8 @@ function App() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold underline">{message}</h1>
+      <h1>{message}</h1>
+      <div className="divider mb-6"></div>
       <div className="flex">
         {stack.map((tool) => (
           <a
@@ -65,11 +73,17 @@ function App() {
             target="_blank"
             onMouseOver={() => mouseHoverHandler(tool)}
           >
-            <img
-              src={tool.logo}
-              className={`logo ${tool.name}`}
-              alt={`${tool.name} logo`}
-            />
+            <div className="avatar indicator">
+              <span className="indicator-item badge badge-secondary">
+                {tool.name}
+                {tool.version}
+              </span>
+              <img
+                src={tool.logo}
+                className={`logo ${tool.name}`}
+                alt={`${tool.name} logo`}
+              />
+            </div>
           </a>
         ))}
       </div>

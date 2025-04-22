@@ -32,6 +32,10 @@
   filter: drop-shadow(0 0 2em #00bcff);
 }
 
+.logo.daisyui:hover {
+  filter: drop-shadow(0 0 2em #fec74c);
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
