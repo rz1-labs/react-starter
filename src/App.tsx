@@ -62,7 +62,7 @@ function App() {
 
   const mouseHoverHandler = (tool: Tool) => {
     setMessage(
-      `${tool.name}${tool.version && ` v${tool.version.substring(1)}`}`
+      `${tool.name}${tool.version && ` v${tool.version.substring(1)}`}`,
     )
   }
 
