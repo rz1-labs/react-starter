@@ -69,11 +69,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: out/${{ steps.version.outputs.version }}/*.zip
-          asset_name: ${{ github.event.repository.name }}-${{ steps.version.outputs.version }}.zip
-          asset_content_type: application/zip
+        run: |
+          for zip_file in out/${{ steps.version.outputs.version }}/*.zip; do
+            if [ -f "$zip_file" ]; then
+              echo "Uploading $zip_file"
+              gh release upload v${{ steps.version.outputs.version }} "$zip_file" --clobber
+            fi
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
