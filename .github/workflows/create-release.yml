@@ -65,7 +65,6 @@ jobs:
           body: 'Release with branch archives'
           draft: false
           prerelease: false
-          generate_release_notes: false # This prevents the default source code archives, does it? it does not.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
