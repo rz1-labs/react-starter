@@ -1,0 +1,63 @@
+name: Create Release with Branch Archives
+
+on:
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract version from package.json
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create output directory
+        run: mkdir -p "out/${{ steps.version.outputs.version }}"
+
+      - name: Zip branches
+        run: |
+          # Save the current branch name
+          current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+          # Function to zip non-gitignored files for a branch
+          zip_branch() {
+            branch=$1
+            zip_name="out/${{ steps.version.outputs.version }}/${branch}.zip"
+            echo "Zipping branch: $branch -> $zip_name"
+            git ls-files -z | xargs -0 zip -q -@ "$zip_name"
+          }
+
+          # Zip current branch
+          zip_branch "$current_branch"
+
+          # Get all origin branches except the current one and HEAD
+          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$")
+
+          # Iterate over origin branches
+          for branch in $branches; do
+            git checkout "$branch"
+            zip_branch "$branch"
+          done
+
+          # Return to the original branch
+          git checkout "$current_branch"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: 'Release with branch archives'
+          files: out/${{ steps.version.outputs.version }}/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
