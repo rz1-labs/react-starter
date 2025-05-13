@@ -3,6 +3,10 @@ name: Create Release with Branch Archives
 on:
   workflow_dispatch: # Manual trigger
 
+# Add permissions block at the workflow level
+permissions:
+  contents: write # Required for creating releases and uploading assets
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
