@@ -23,10 +23,10 @@ jobs:
 
       - name: Extract version from package.json
         id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
       - name: Create output directory
-        run: mkdir -p "out/${{ steps.version.outputs.version }}"
+        run: mkdir -p "out/${{ env.version }}"
 
       - name: Zip branches
         run: |
@@ -36,7 +36,7 @@ jobs:
           # Function to zip non-gitignored files for a branch
           zip_branch() {
             branch=$1
-            zip_name="out/${{ steps.version.outputs.version }}/${branch}.zip"
+            zip_name="out/${{ env.version }}/${branch}.zip"
             echo "Zipping branch: $branch -> $zip_name"
             git ls-files -z | xargs -0 zip -q -@ "$zip_name"
           }
@@ -60,8 +60,8 @@ jobs:
         uses: actions/create-release@v1
         id: create_release
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          tag_name: v${{ env.version }}
+          release_name: Release v${{ env.version }}
           body: 'Release with branch archives'
           draft: false
           prerelease: false
@@ -71,10 +71,10 @@ jobs:
 
       - name: Upload Release Assets
         run: |
-          for zip_file in out/${{ steps.version.outputs.version }}/*.zip; do
+          for zip_file in out/${{ env.version }}/*.zip; do
             if [ -f "$zip_file" ]; then
               echo "Uploading $zip_file"
-              gh release upload v${{ steps.version.outputs.version }} "$zip_file" --clobber
+              gh release upload v${{ env.version }} "$zip_file" --clobber
             fi
           done
         env:
