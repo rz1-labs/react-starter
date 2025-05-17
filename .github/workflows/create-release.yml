@@ -61,7 +61,7 @@ jobs:
         id: create_release
         with:
           tag_name: v${{ env.version }}
-          release_name: Release v${{ env.version }}
+          release_name: v${{ env.version }}
           body: 'Release with branch archives'
           draft: false
           prerelease: false
