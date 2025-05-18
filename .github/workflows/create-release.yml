@@ -52,8 +52,12 @@ jobs:
             # Checkout branch
             git checkout "$branch"
 
-            # Use rsync to copy files, excluding patterns from .zipignore
-            rsync -a --exclude-from='.zipignore' ./ "$temp_dir/"
+            # Use rsync to copy files, excluding patterns from .zipignore if it exists
+            if [ -f .zipignore ]; then
+              rsync -a --exclude-from='.zipignore' ./ "$temp_dir/"
+            else
+              rsync -a ./ "$temp_dir/"
+            fi
 
             # Create zip from temp dir
             (cd "$temp_dir" && zip -qr "../$zip_name" .)
