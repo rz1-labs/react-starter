@@ -1,7 +1,10 @@
-.github/
 node_modules/
+
+
+.github/
 *.log
 *.env
 .git/
 out/
 temp_zip_dir/
+.zipignore
