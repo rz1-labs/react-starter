@@ -33,12 +33,33 @@ jobs:
           # Save the current branch name
           current_branch=$(git rev-parse --abbrev-ref HEAD)
 
+          # Read ignore patterns from .zipignore and build grep pattern
+          ignore_pattern=$(grep -v '^#' .zipignore | grep -v '^$' | sed 's|^|^|' | paste -sd'|' -)
+
+          echo "Ignore pattern -> $ignore_pattern"
+
           # Function to zip non-gitignored files for a branch
           zip_branch() {
             branch=$1
             zip_name="out/${{ env.version }}/${branch}.zip"
+            temp_dir="temp_zip_dir"
             echo "Zipping branch: $branch -> $zip_name"
-            git ls-files -z | grep -vz "^.github/" | xargs -0 zip -q -@ "$zip_name"
+
+            # Clean temp dir
+            rm -rf "$temp_dir"
+            mkdir "$temp_dir"
+
+            # Checkout branch
+            git checkout "$branch"
+
+            # Use rsync to copy files, excluding patterns from .zipignore
+            rsync -a --exclude-from='.zipignore' ./ "$temp_dir/"
+
+            # Create zip from temp dir
+            (cd "$temp_dir" && zip -qr "../$zip_name" .)
+
+            # Clean up
+            rm -rf "$temp_dir"
           }
 
           # Zip current branch
