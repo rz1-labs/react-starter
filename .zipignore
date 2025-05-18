@@ -1,7 +1,10 @@
 # git
+.git/
 .github/
 
 # dev files
 *.log
 *.env
 .zipignore
+temp_zip_dir/
+out/
