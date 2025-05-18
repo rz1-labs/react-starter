@@ -1,6 +1,7 @@
-# files you'd want ignored besides gitignored files
-
 .github/
 node_modules/
 *.log
 *.env
+.git/
+out/
+temp_zip_dir/
