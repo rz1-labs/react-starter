@@ -38,7 +38,7 @@ jobs:
             branch=$1
             zip_name="out/${{ env.version }}/${branch}.zip"
             echo "Zipping branch: $branch -> $zip_name"
-            git ls-files -z | xargs -0 zip -q -@ "$zip_name"
+            git ls-files -z | grep -vz "^.github/" | xargs -0 zip -q -@ "$zip_name"
           }
 
           # Zip current branch
