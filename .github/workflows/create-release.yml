@@ -59,18 +59,16 @@ jobs:
 
           # Create a basic .zipignore if it doesn't exist
           if [ ! -f .zipignore ]; then
-            cat > .zipignore << 'EOF'
-            .git/
-            .github/
-            node_modules/
-            .next/
-            out/
-            temp_zip_dir/
-            *.log
-            .env*
-            .DS_Store
-            Thumbs.db
-            EOF
+            echo ".git/" > .zipignore
+            echo ".github/" >> .zipignore
+            echo "node_modules/" >> .zipignore
+            echo ".next/" >> .zipignore
+            echo "out/" >> .zipignore
+            echo "temp_zip_dir/" >> .zipignore
+            echo "*.log" >> .zipignore
+            echo ".env*" >> .zipignore
+            echo ".DS_Store" >> .zipignore
+            echo "Thumbs.db" >> .zipignore
             echo "Created .zipignore file"
           fi
 
