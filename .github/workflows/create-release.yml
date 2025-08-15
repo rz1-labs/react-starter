@@ -57,23 +57,37 @@ jobs:
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           echo "Current branch: $current_branch"
 
-          # Check for existing .zipignore file
+          # Check for existing .zipignore file or create a default one
           if [ -f .zipignore ]; then
             echo "Using existing .zipignore file:"
             cat .zipignore
           else
             echo "Creating default .zipignore file..."
+            
+            # Version control and CI/CD files
             echo ".git/" > .zipignore
             echo ".github/" >> .zipignore
+            
+            # Dependencies and build artifacts
             echo "node_modules/" >> .zipignore
             echo ".next/" >> .zipignore
             echo "out/" >> .zipignore
             echo "temp_zip_dir/" >> .zipignore
+            
+            # Log files
             echo "*.log" >> .zipignore
+            
+            # Environment and configuration files
             echo ".env*" >> .zipignore
+            
+            # System files
             echo ".DS_Store" >> .zipignore
             echo "Thumbs.db" >> .zipignore
-            echo "Created default .zipignore file"
+            
+            # Self-exclusion
+            echo ".zipignore" >> .zipignore
+            
+            echo "Created default .zipignore file with common exclusions"
           fi
 
           # Function to zip non-gitignored files for a branch
