@@ -57,8 +57,12 @@ jobs:
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           echo "Current branch: $current_branch"
 
-          # Create a basic .zipignore if it doesn't exist
-          if [ ! -f .zipignore ]; then
+          # Check for existing .zipignore file
+          if [ -f .zipignore ]; then
+            echo "Using existing .zipignore file:"
+            cat .zipignore
+          else
+            echo "Creating default .zipignore file..."
             echo ".git/" > .zipignore
             echo ".github/" >> .zipignore
             echo "node_modules/" >> .zipignore
@@ -69,8 +73,7 @@ jobs:
             echo ".env*" >> .zipignore
             echo ".DS_Store" >> .zipignore
             echo "Thumbs.db" >> .zipignore
-            echo ".zipignore" >> .zipignore
-            echo "Created .zipignore file"
+            echo "Created default .zipignore file"
           fi
 
           # Function to zip non-gitignored files for a branch
@@ -95,12 +98,15 @@ jobs:
             echo "Zipping branch: $branch -> $zip_name"
 
             # Use rsync to copy files, excluding patterns from .zipignore and .gitignore
+            # This ensures .zipignore files are properly respected during the zip process
             local rsync_excludes=""
             if [ -f .zipignore ]; then
               rsync_excludes="$rsync_excludes --exclude-from=.zipignore"
+              echo "Applying .zipignore exclusions for branch $branch"
             fi
             if [ -f .gitignore ]; then
               rsync_excludes="$rsync_excludes --exclude-from=.gitignore"
+              echo "Applying .gitignore exclusions for branch $branch"
             fi
 
             if ! rsync -a $rsync_excludes ./ "$temp_dir/"; then
