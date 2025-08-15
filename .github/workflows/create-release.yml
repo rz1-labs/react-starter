@@ -63,16 +63,29 @@ jobs:
             cat .zipignore
           else
             echo "Creating default .zipignore file..."
+            
+            # Version control and CI/CD files
             echo ".git/" > .zipignore
             echo ".github/" >> .zipignore
+            
+            # Dependencies and build artifacts
             echo "node_modules/" >> .zipignore
             echo ".next/" >> .zipignore
             echo "out/" >> .zipignore
+            
+            # Temporary and working directories
             echo "temp_zip_dir/" >> .zipignore
+            
+            # Log files
             echo "*.log" >> .zipignore
+            
+            # Environment and configuration files
             echo ".env*" >> .zipignore
+            
+            # OS-specific files
             echo ".DS_Store" >> .zipignore
             echo "Thumbs.db" >> .zipignore
+            
             echo "Created default .zipignore file"
           fi
 
