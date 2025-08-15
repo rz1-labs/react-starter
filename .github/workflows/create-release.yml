@@ -59,32 +59,18 @@ jobs:
 
           # Create a basic .zipignore if it doesn't exist
           if [ ! -f .zipignore ]; then
-            echo "Creating default .zipignore file..."
-            
-            # Version control and CI/CD files
             echo ".git/" > .zipignore
             echo ".github/" >> .zipignore
-            
-            # Dependencies and build artifacts
             echo "node_modules/" >> .zipignore
             echo ".next/" >> .zipignore
             echo "out/" >> .zipignore
             echo "temp_zip_dir/" >> .zipignore
-            
-            # Log files
             echo "*.log" >> .zipignore
-            
-            # Environment and configuration files
             echo ".env*" >> .zipignore
-            
-            # System files
             echo ".DS_Store" >> .zipignore
             echo "Thumbs.db" >> .zipignore
-            
-            # Self-exclusion
             echo ".zipignore" >> .zipignore
-            
-            echo "Created default .zipignore file with common exclusions"
+            echo "Created .zipignore file"
           fi
 
           # Function to zip non-gitignored files for a branch
