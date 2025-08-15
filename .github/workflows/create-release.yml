@@ -105,6 +105,21 @@ jobs:
             # Checkout branch with error handling
             echo "Attempting to checkout branch: $branch"
             
+            # First, ensure we have the latest remote info for this branch
+            echo "Fetching latest info for branch: $branch"
+            if ! git fetch origin "$branch" 2>/dev/null; then
+              echo "Error: Could not fetch branch $branch from remote, skipping..."
+              rm -rf "$temp_dir"
+              return 1
+            fi
+            
+            # Check if remote branch exists
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "Error: Remote branch origin/$branch does not exist, skipping..."
+              rm -rf "$temp_dir"
+              return 1
+            fi
+            
             # Try to checkout existing local branch first
             if git show-ref --verify --quiet refs/heads/"$branch"; then
               echo "Local branch exists, checking out: $branch"
@@ -130,6 +145,17 @@ jobs:
             else
               echo "Successfully reset branch $branch to match remote"
             fi
+            
+            # Verify we're on the correct branch and have the right content
+            current_branch_check=$(git rev-parse --abbrev-ref HEAD)
+            if [ "$current_branch_check" != "$branch" ]; then
+              echo "Error: Expected to be on branch $branch but currently on $current_branch_check"
+              rm -rf "$temp_dir"
+              return 1
+            fi
+            
+            echo "Successfully on branch: $branch"
+            echo "Branch HEAD commit: $(git rev-parse HEAD)"
 
             echo "Zipping branch: $branch -> $zip_name"
 
@@ -176,26 +202,47 @@ jobs:
           git fetch --all --prune
 
           # Get all origin branches except the current one, HEAD, and origin
-          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$")
+          echo "Available remote branches:"
+          git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | sort
 
-          echo "Found additional branches: $branches"
+          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$" | sort)
+
+          echo "Found additional branches to process: $branches"
+          echo "Total branches to process: $(echo "$branches" | wc -w)"
 
           # Iterate over origin branches
           failed_branches=""
+          successful_branches=""
+          total_branches=$(echo "$branches" | wc -w)
+          processed_branches=0
+
           for branch in $branches; do
-            if ! zip_branch "$branch"; then
+            echo "=== Processing branch $branch ($((processed_branches + 1))/$total_branches) ==="
+            if zip_branch "$branch"; then
+              successful_branches="$successful_branches $branch"
+              echo "✅ Successfully processed branch: $branch"
+            else
               failed_branches="$failed_branches $branch"
+              echo "❌ Failed to process branch: $branch"
             fi
+            processed_branches=$((processed_branches + 1))
+            echo "=== Completed branch $branch ==="
           done
 
           # Return to the original branch
           git checkout "$current_branch"
           echo "Returned to original branch: $current_branch"
 
-          # Report any failed branches
-          if [ -n "$failed_branches" ]; then
-            echo "Warning: Failed to process branches:$failed_branches"
+          # Report results
+          echo "=== BRANCH PROCESSING SUMMARY ==="
+          echo "Total branches processed: $processed_branches"
+          if [ -n "$successful_branches" ]; then
+            echo "✅ Successfully processed branches:$successful_branches"
           fi
+          if [ -n "$failed_branches" ]; then
+            echo "❌ Failed to process branches:$failed_branches"
+          fi
+          echo "================================="
 
       - name: Verify zip files
         run: |
