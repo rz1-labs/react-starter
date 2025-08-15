@@ -1,7 +1,7 @@
 {
   "name": "react-starter",
   "private": true,
-  "version": "2025.05",
+  "version": "2025.08",
   "type": "module",
   "scripts": {
     "dev": "vite",

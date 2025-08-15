@@ -134,7 +134,7 @@ jobs:
           echo "Found additional branches: $branches"
 
           # Iterate over origin branches
-          local failed_branches=""
+          failed_branches=""
           for branch in $branches; do
             if ! zip_branch "$branch"; then
               failed_branches="$failed_branches $branch"
