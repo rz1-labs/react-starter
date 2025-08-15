@@ -104,9 +104,20 @@ jobs:
 
             # Checkout branch with error handling
             if ! git checkout "$branch" 2>/dev/null; then
-              echo "Warning: Could not checkout branch $branch, skipping..."
-              rm -rf "$temp_dir"
-              return 1
+              echo "Warning: Could not checkout branch $branch, trying to create local tracking branch..."
+              if ! git checkout -b "$branch" "origin/$branch" 2>/dev/null; then
+                echo "Error: Could not checkout or create branch $branch, skipping..."
+                rm -rf "$temp_dir"
+                return 1
+              fi
+            fi
+
+            # Pull latest code for this branch from remote
+            echo "Pulling latest code for branch: $branch"
+            if ! git pull origin "$branch" 2>/dev/null; then
+              echo "Warning: Could not pull latest code for branch $branch, using current state"
+            else
+              echo "Successfully pulled latest code for branch: $branch"
             fi
 
             echo "Zipping branch: $branch -> $zip_name"
@@ -149,10 +160,22 @@ jobs:
             exit 1
           fi
 
+          # Fetch all remote branches and create local tracking branches
+          echo "Fetching all remote branches..."
+          git fetch --all
+
           # Get all origin branches except the current one, HEAD, and origin
           branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$")
 
           echo "Found additional branches: $branches"
+
+          # Create local tracking branches for remote branches
+          for branch in $branches; do
+            if ! git show-ref --verify --quiet refs/heads/$branch; then
+              echo "Creating local tracking branch for: $branch"
+              git checkout -b "$branch" "origin/$branch" 2>/dev/null || echo "Warning: Could not create local branch $branch"
+            fi
+          done
 
           # Iterate over origin branches
           failed_branches=""
