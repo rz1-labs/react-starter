@@ -85,6 +85,7 @@ jobs:
             # OS-specific files
             echo ".DS_Store" >> .zipignore
             echo "Thumbs.db" >> .zipignore
+            echo ".zipignore" >> .zipignore
             
             echo "Created default .zipignore file"
           fi
@@ -122,12 +123,15 @@ jobs:
               echo "Applying .gitignore exclusions for branch $branch"
             fi
 
+            echo "Copying files for branch $branch (excluding ignored patterns)..."
             if ! rsync -a $rsync_excludes ./ "$temp_dir/"; then
               echo "Error: Failed to copy files for branch $branch"
               rm -rf "$temp_dir"
               return 1
             fi
+            echo "Files copied successfully for branch $branch"
 
+            echo "Creating zip archive for branch $branch..."
             # Create zip from temp dir
             if ! (cd "$temp_dir" && zip -qr "../$zip_name" .); then
               echo "Error: Failed to create zip for branch $branch"
@@ -135,7 +139,7 @@ jobs:
               return 1
             fi
 
-            echo "Successfully created: $zip_name"
+            echo "✅ Successfully created: $zip_name"
             
             # Clean up
             rm -rf "$temp_dir"
@@ -143,32 +147,54 @@ jobs:
           }
 
           # Zip current branch
+          echo "🔄 Processing current branch: $current_branch"
           if ! zip_branch "$current_branch"; then
             echo "Error: Failed to zip current branch"
             exit 1
           fi
+          echo "✅ Current branch processed successfully"
 
           # Get all origin branches except the current one, HEAD, and origin
+          echo "🔍 Discovering additional branches..."
           branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$")
 
-          echo "Found additional branches: $branches"
+          echo "📋 Found additional branches: $branches"
 
           # Iterate over origin branches
           failed_branches=""
-          for branch in $branches; do
-            if ! zip_branch "$branch"; then
-              failed_branches="$failed_branches $branch"
-            fi
-          done
+          branch_count=$(echo "$branches" | wc -w)
+          current_branch_num=0
+
+          if [ "$branch_count" -gt 0 ]; then
+            echo "🔄 Processing $branch_count additional branches..."
+            for branch in $branches; do
+              current_branch_num=$((current_branch_num + 1))
+              echo "📦 [$current_branch_num/$branch_count] Processing branch: $branch"
+              if ! zip_branch "$branch"; then
+                failed_branches="$failed_branches $branch"
+                echo "❌ Failed to process branch: $branch"
+              else
+                echo "✅ Successfully processed branch: $branch"
+              fi
+            done
+            echo "🏁 Finished processing all additional branches"
+          else
+            echo "ℹ️  No additional branches to process"
+          fi
 
           # Return to the original branch
+          echo "🔄 Returning to original branch: $current_branch"
           git checkout "$current_branch"
-          echo "Returned to original branch: $current_branch"
+          echo "✅ Returned to original branch: $current_branch"
 
           # Report any failed branches
           if [ -n "$failed_branches" ]; then
-            echo "Warning: Failed to process branches:$failed_branches"
+            echo "⚠️  Warning: Failed to process branches:$failed_branches"
+          else
+            echo "🎉 All branches processed successfully!"
           fi
+
+          echo "📊 Summary: Processed $(($(echo "$branches" | wc -w) + 1)) total branches"
 
       - name: Verify zip files
         run: |
