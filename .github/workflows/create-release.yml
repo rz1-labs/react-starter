@@ -101,89 +101,32 @@ jobs:
             # Clean temp dir
             rm -rf "$temp_dir"
             mkdir -p "$temp_dir"
-
             # Checkout branch with error handling
-            echo "Attempting to checkout branch: $branch"
-            
-            # First, ensure we have the latest remote info for this branch
-            echo "Fetching latest info for branch: $branch"
-            if ! git fetch origin "$branch" 2>/dev/null; then
-              echo "Error: Could not fetch branch $branch from remote, skipping..."
+            if ! git checkout "$branch" 2>/dev/null; then
+              echo "Warning: Could not checkout branch $branch, skipping..."
               rm -rf "$temp_dir"
               return 1
             fi
-            
-            # Check if remote branch exists
-            if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-              echo "Error: Remote branch origin/$branch does not exist, skipping..."
-              rm -rf "$temp_dir"
-              return 1
-            fi
-            
-            # Try to checkout existing local branch first
-            if git show-ref --verify --quiet refs/heads/"$branch"; then
-              echo "Local branch exists, checking out: $branch"
-              if ! git checkout "$branch" 2>/dev/null; then
-                echo "Error: Could not checkout local branch $branch, skipping..."
-                rm -rf "$temp_dir"
-                return 1
-              fi
-            else
-              echo "Local branch does not exist, creating tracking branch: $branch"
-              # Create local tracking branch from remote
-              if ! git checkout -b "$branch" "origin/$branch" 2>/dev/null; then
-                echo "Error: Could not create tracking branch $branch, skipping..."
-                rm -rf "$temp_dir"
-                return 1
-              fi
-            fi
-
-            # Reset to match remote exactly (this is safer than pull)
-            echo "Resetting branch $branch to match remote origin/$branch"
-            if ! git reset --hard "origin/$branch" 2>/dev/null; then
-              echo "Warning: Could not reset branch $branch to remote, using current state"
-            else
-              echo "Successfully reset branch $branch to match remote"
-            fi
-            
-            # Verify we're on the correct branch and have the right content
-            current_branch_check=$(git rev-parse --abbrev-ref HEAD)
-            if [ "$current_branch_check" != "$branch" ]; then
-              echo "Error: Expected to be on branch $branch but currently on $current_branch_check"
-              rm -rf "$temp_dir"
-              return 1
-            fi
-            
-            echo "Successfully on branch: $branch"
-            echo "Branch HEAD commit: $(git rev-parse HEAD)"
-
             echo "Zipping branch: $branch -> $zip_name"
-
             # Use rsync to copy files, excluding patterns from .zipignore and .gitignore
-            # This ensures .zipignore files are properly respected during the zip process
             local rsync_excludes=""
             if [ -f .zipignore ]; then
               rsync_excludes="$rsync_excludes --exclude-from=.zipignore"
-              echo "Applying .zipignore exclusions for branch $branch"
             fi
             if [ -f .gitignore ]; then
               rsync_excludes="$rsync_excludes --exclude-from=.gitignore"
-              echo "Applying .gitignore exclusions for branch $branch"
             fi
-
             if ! rsync -a $rsync_excludes ./ "$temp_dir/"; then
               echo "Error: Failed to copy files for branch $branch"
               rm -rf "$temp_dir"
               return 1
             fi
-
             # Create zip from temp dir
             if ! (cd "$temp_dir" && zip -qr "../$zip_name" .); then
               echo "Error: Failed to create zip for branch $branch"
               rm -rf "$temp_dir"
               return 1
             fi
-
             echo "Successfully created: $zip_name"
             
             # Clean up
