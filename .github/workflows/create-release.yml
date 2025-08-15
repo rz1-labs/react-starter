@@ -57,11 +57,8 @@ jobs:
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           echo "Current branch: $current_branch"
 
-          # Check for existing .zipignore file or create a default one
-          if [ -f .zipignore ]; then
-            echo "Using existing .zipignore file:"
-            cat .zipignore
-          else
+          # Create a basic .zipignore if it doesn't exist
+          if [ ! -f .zipignore ]; then
             echo "Creating default .zipignore file..."
             
             # Version control and CI/CD files
@@ -101,13 +98,16 @@ jobs:
             # Clean temp dir
             rm -rf "$temp_dir"
             mkdir -p "$temp_dir"
+
             # Checkout branch with error handling
             if ! git checkout "$branch" 2>/dev/null; then
               echo "Warning: Could not checkout branch $branch, skipping..."
               rm -rf "$temp_dir"
               return 1
             fi
+
             echo "Zipping branch: $branch -> $zip_name"
+
             # Use rsync to copy files, excluding patterns from .zipignore and .gitignore
             local rsync_excludes=""
             if [ -f .zipignore ]; then
@@ -116,17 +116,20 @@ jobs:
             if [ -f .gitignore ]; then
               rsync_excludes="$rsync_excludes --exclude-from=.gitignore"
             fi
+
             if ! rsync -a $rsync_excludes ./ "$temp_dir/"; then
               echo "Error: Failed to copy files for branch $branch"
               rm -rf "$temp_dir"
               return 1
             fi
+
             # Create zip from temp dir
             if ! (cd "$temp_dir" && zip -qr "../$zip_name" .); then
               echo "Error: Failed to create zip for branch $branch"
               rm -rf "$temp_dir"
               return 1
             fi
+
             echo "Successfully created: $zip_name"
             
             # Clean up
@@ -140,52 +143,27 @@ jobs:
             exit 1
           fi
 
-          # Fetch all remote branches
-          echo "Fetching all remote branches..."
-          git fetch --all --prune
-
           # Get all origin branches except the current one, HEAD, and origin
-          echo "Available remote branches:"
-          git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | sort
+          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$")
 
-          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$" | sort)
-
-          echo "Found additional branches to process: $branches"
-          echo "Total branches to process: $(echo "$branches" | wc -w)"
+          echo "Found additional branches: $branches"
 
           # Iterate over origin branches
           failed_branches=""
-          successful_branches=""
-          total_branches=$(echo "$branches" | wc -w)
-          processed_branches=0
-
           for branch in $branches; do
-            echo "=== Processing branch $branch ($((processed_branches + 1))/$total_branches) ==="
-            if zip_branch "$branch"; then
-              successful_branches="$successful_branches $branch"
-              echo "✅ Successfully processed branch: $branch"
-            else
+            if ! zip_branch "$branch"; then
               failed_branches="$failed_branches $branch"
-              echo "❌ Failed to process branch: $branch"
             fi
-            processed_branches=$((processed_branches + 1))
-            echo "=== Completed branch $branch ==="
           done
 
           # Return to the original branch
           git checkout "$current_branch"
           echo "Returned to original branch: $current_branch"
 
-          # Report results
-          echo "=== BRANCH PROCESSING SUMMARY ==="
-          echo "Total branches processed: $processed_branches"
-          if [ -n "$successful_branches" ]; then
-            echo "✅ Successfully processed branches:$successful_branches"
-          fi
+          # Report any failed branches
           if [ -n "$failed_branches" ]; then
-            echo "❌ Failed to process branches:$failed_branches"
+            echo "Warning: Failed to process branches:$failed_branches"
           fi
-          echo "================================="
 
       - name: Verify zip files
         run: |
