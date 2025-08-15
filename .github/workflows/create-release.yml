@@ -17,6 +17,14 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for all branches
 
+      - name: Verify Git setup
+        run: |
+          echo "Verifying Git setup..."
+          git --version
+          git branch -a
+          git remote -v
+          echo "Git setup verified successfully"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -55,6 +63,10 @@ jobs:
         run: |
           # Save the current branch name
           current_branch=$(git rev-parse --abbrev-ref HEAD)
+          if [ -z "$current_branch" ]; then
+            echo "Error: Could not determine current branch"
+            exit 1
+          fi
           echo "Current branch: $current_branch"
 
           # Check for existing .zipignore file
@@ -156,30 +168,48 @@ jobs:
 
           # Get all origin branches except the current one, HEAD, and origin
           echo "🔍 Discovering additional branches..."
-          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$")
+          echo "Debug: All remote refs:"
+          git for-each-ref --format='%(refname:short)' refs/remotes/origin/ || echo "Warning: Could not list remote refs"
 
-          echo "📋 Found additional branches: $branches"
+          branches=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///' | grep -v "^$current_branch$" | grep -v "^HEAD$" | grep -v "^origin$" | grep -v "^$" | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+          # Handle case where no additional branches are found
+          if [ -z "$branches" ] || [ "$branches" = "" ]; then
+            echo "📋 No additional branches found - only processing current branch ($current_branch)"
+            branches=""
+          else
+            echo "📋 Found additional branches: $branches"
+          fi
+
+          # Ensure we always have at least the current branch to process
+          if [ -z "$branches" ]; then
+            echo "ℹ️  Proceeding with single branch release (current branch only)"
+          fi
 
           # Iterate over origin branches
           failed_branches=""
-          branch_count=$(echo "$branches" | wc -w)
-          current_branch_num=0
 
-          if [ "$branch_count" -gt 0 ]; then
-            echo "🔄 Processing $branch_count additional branches..."
-            for branch in $branches; do
-              current_branch_num=$((current_branch_num + 1))
-              echo "📦 [$current_branch_num/$branch_count] Processing branch: $branch"
-              if ! zip_branch "$branch"; then
-                failed_branches="$failed_branches $branch"
-                echo "❌ Failed to process branch: $branch"
-              else
-                echo "✅ Successfully processed branch: $branch"
-              fi
-            done
-            echo "🏁 Finished processing all additional branches"
+          if [ -n "$branches" ] && [ "$branches" != "" ]; then
+            branch_count=$(echo "$branches" | wc -w)
+            current_branch_num=0
+            
+            if [ "$branch_count" -gt 0 ]; then
+              echo "🔄 Processing $branch_count additional branches..."
+              for branch in $branches; do
+                current_branch_num=$((current_branch_num + 1))
+                echo "📦 [$current_branch_num/$branch_count] Processing branch: $branch"
+                if ! zip_branch "$branch"; then
+                  failed_branches="$failed_branches $branch"
+                  echo "❌ Failed to process branch: $branch"
+                else
+                  echo "✅ Successfully processed branch: $branch"
+                fi
+              done
+              echo "🏁 Finished processing all additional branches"
+            fi
           else
-            echo "ℹ️  No additional branches to process"
+            echo "ℹ️  No additional branches to process - only main branch will be released"
+            branch_count=0
           fi
 
           # Return to the original branch
@@ -190,11 +220,21 @@ jobs:
           # Report any failed branches
           if [ -n "$failed_branches" ]; then
             echo "⚠️  Warning: Failed to process branches:$failed_branches"
+            # Don't exit with error if we at least processed the current branch successfully
+            if [ "$branch_count" -eq 0 ]; then
+              echo "ℹ️  Current branch was processed successfully, continuing with release..."
+            fi
           else
             echo "🎉 All branches processed successfully!"
           fi
 
-          echo "📊 Summary: Processed $(($(echo "$branches" | wc -w) + 1)) total branches"
+          # Calculate total branches processed
+          if [ "$branch_count" -gt 0 ]; then
+            total_branches=$((branch_count + 1))
+            echo "📊 Summary: Processed $total_branches total branches (1 current + $branch_count additional)"
+          else
+            echo "📊 Summary: Processed 1 branch (current branch only)"
+          fi
 
       - name: Verify zip files
         run: |
