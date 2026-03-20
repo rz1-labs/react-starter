@@ -14,13 +14,13 @@
     "test:browser": "vitest"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.4",
-    "axios": "^1.8.4",
-    "daisyui": "^5.0.27",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router": "^7.5.2",
-    "tailwindcss": "^4.1.4"
+    "@tailwindcss/vite": "^4.2.2",
+    "axios": "^1.13.6",
+    "daisyui": "^5.5.19",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.13.1",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
