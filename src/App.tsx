@@ -72,6 +72,7 @@ function App() {
       <div className="flex">
         {stack.map((tool) => (
           <a
+            key={tool.name}
             href={tool.href}
             target="_blank"
             onMouseOver={() => mouseHoverHandler(tool)}
