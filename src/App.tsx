@@ -54,6 +54,7 @@ function App() {
       <div>
         {stack.map((tool) => (
           <a
+            key={tool.name}
             href={tool.href}
             target="_blank"
             onMouseOver={() => mouseHoverHandler(tool)}
